@@ -156,3 +156,64 @@ def g_force_warnings(points: List[TrackPoint], g_forces: List[Tuple[float, float
 
     flush(points[-1].distance if points else 0.0)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Inverse design: solve for the radius that produces a target G-force at a
+# known speed, instead of the usual forward direction (pick a radius, see
+# what G-force results). This is the one place this program works the way
+# FVD++ does - forces-first instead of shape-first - scoped to the few
+# element types where the radius-to-G relationship is direct and
+# unambiguous (a single constant-radius arc at roughly-constant speed).
+# Banked turns are deliberately not included yet: bank angle splits the
+# force between vertical and lateral in a way that needs more care than a
+# single algebraic solve.
+# ---------------------------------------------------------------------------
+
+def solve_radius_hill(speed_ms: float, target_g: float, climbing: bool) -> float:
+    """Radius for a Hill Arc that produces `target_g` vertical G at
+    `speed_ms`. `climbing` must match the sign of the angle you intend to
+    use (True for a positive/climbing angle, where G = 1 + v^2/(Rg) and
+    target_g > 1 is required; False for a negative/diving angle, where
+    G = 1 - v^2/(Rg) and target_g < 1 is required)."""
+    if speed_ms <= 0:
+        raise ValueError("Speed must be positive to solve for a radius.")
+    if climbing:
+        if target_g <= 1.0:
+            raise ValueError(
+                "A climbing (positive-angle) Hill Arc always reads above 1G - "
+                "pick a target G-force greater than 1.0, or use a negative "
+                "(diving) angle instead for G-forces below 1.0."
+            )
+        return speed_ms ** 2 / (GRAVITY * (target_g - 1.0))
+    else:
+        if target_g >= 1.0:
+            raise ValueError(
+                "A diving (negative-angle) Hill Arc always reads below 1G - "
+                "pick a target G-force less than 1.0, or use a positive "
+                "(climbing) angle instead for G-forces above 1.0."
+            )
+        return speed_ms ** 2 / (GRAVITY * (1.0 - target_g))
+
+
+def solve_radius_flat_turn(speed_ms: float, target_lateral_g: float) -> float:
+    """Radius for a Flat Turn that produces `target_lateral_g` of lateral
+    G at `speed_ms`. target_lateral_g must be positive (the direction
+    left/right is set separately by the element's own direction field)."""
+    if speed_ms <= 0:
+        raise ValueError("Speed must be positive to solve for a radius.")
+    if target_lateral_g <= 0:
+        raise ValueError("Target lateral G-force must be greater than 0.")
+    return speed_ms ** 2 / (GRAVITY * target_lateral_g)
+
+
+def solve_radius_loop(speed_ms: float, target_bottom_g: float) -> float:
+    """Radius for a Vertical Loop such that the bottom of the loop (where
+    forces peak, and the figure riders and reviews actually care about)
+    reads `target_bottom_g` vertical G at `speed_ms`. target_bottom_g must
+    be greater than 1.0."""
+    if speed_ms <= 0:
+        raise ValueError("Speed must be positive to solve for a radius.")
+    if target_bottom_g <= 1.0:
+        raise ValueError("A loop's bottom G-force is always above 1.0 - pick a higher target.")
+    return speed_ms ** 2 / (GRAVITY * (target_bottom_g - 1.0))

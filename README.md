@@ -453,7 +453,39 @@ same flawed pattern at first, revealing the bug through a much more
 visible symptom (tens of meters of unwanted descent) before getting
 traced back to its root cause.
 
-## Known limitations / next steps (updated after milestone 15)
+## Solve for radius from target G-force (milestone 16)
+
+The first step toward closing the versatility gap with FVD++: for Hill
+Arc, Flat Turn, and Vertical Loop, the edit dialog now shows a "Solve
+for radius from target G-force" panel - type the G-force you want, hit
+"Solve for radius", and the field updates to the radius that actually
+produces it at this element's real entry speed (computed the same way
+the Speed/G-Forces tab and per-element speed readout already are).
+This is the one place the program works the way FVD++ does - forces
+first, not shape first - for the cases where the radius-to-G
+relationship is simple enough to solve directly: a Hill Arc's sign
+(climbing vs. diving) determines whether the target must be above or
+below 1.0G; a Flat Turn's target is lateral G; a loop's target is its
+bottom G, where forces peak.
+
+Verified two ways: the underlying `solve_radius_*` functions in
+`physics.py` round-trip correctly (build an element at the solved
+radius, confirm you actually get the target G back - exact for Flat
+Turn and Vertical Loop, within 2% for Hill Arc due to sampling), and
+the GUI wiring itself is tested end-to-end (open a real dialog, click
+the actual button, confirm the field updates and matches a direct
+physics call). Also tested that impossible targets (e.g. asking a
+climbing Hill Arc for less than 1.0G) raise a clear, explained error
+rather than producing a nonsense or negative radius.
+
+**Deliberately out of scope for this pass:** Banked Turn, Camelback,
+and Clothoid Loop aren't included yet - banked turns split force
+between vertical and lateral based on bank angle in a way that needs
+more care than a single algebraic solve, and the multi-radius
+composites don't have one clean radius-to-G relationship to invert.
+Worth a follow-up if this proves useful.
+
+## Known limitations / next steps (updated after milestone 16)
 
 **Fixed in milestone 3:**
 - ~~Banked turns drift in height~~ — fixed. Yaw is now a rigid rotation

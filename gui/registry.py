@@ -31,6 +31,7 @@ ELEMENT_TYPES = {
             ("angle_deg", "float", 90.0, -360.0, 360.0, 1.0, "deg"),
             ("direction", "choice", "left", ["left", "right"]),
         ],
+        "g_force_solve": {"radius_param": "radius", "mode": "flat_turn"},
     },
     "banked_turn": {
         "label": "Banked Turn",
@@ -50,6 +51,7 @@ ELEMENT_TYPES = {
             ("radius", "float", 40.0, 2.0, 1000.0, 0.5, "m"),
             ("angle_deg", "float", 25.0, -180.0, 180.0, 1.0, "deg"),
         ],
+        "g_force_solve": {"radius_param": "radius", "mode": "hill"},
     },
     "camelback": {
         "label": "Camelback Hill (airtime)",
@@ -65,6 +67,7 @@ ELEMENT_TYPES = {
         "params": [
             ("radius", "float", 12.0, 3.0, 60.0, 0.5, "m"),
         ],
+        "g_force_solve": {"radius_param": "radius", "mode": "loop"},
     },
     "clothoid_loop": {
         "label": "Clothoid Loop (Stengel-style)",

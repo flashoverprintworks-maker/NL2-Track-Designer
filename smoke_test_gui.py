@@ -166,6 +166,51 @@ def run_checks():
         assert item.data(Qt.UserRole)["params"]["length"] == 60.0
         print("Live preview during element editing OK (updates live, one undo step per edit)")
 
+        # --- Solve for radius from target G-force (through the actual dialog) ---
+        win._new_project()
+        win.track_list.append_element("straight")
+        win.track_list.append_element("hill")
+        win._refresh()
+
+        hill_item = win.track_list.item(1)
+        hill_row = win.track_list.row(hill_item)
+        row_distances = win._last_row_distances
+        start_dist = row_distances[hill_row - 1] if hill_row > 0 else 0.0
+        idx = win._closest_index(win._last_rail_points, start_dist)
+        entry_speed = win._last_speeds[idx]
+        assert entry_speed > 0, "expected a positive entry speed for the solve test"
+
+        hill_data = hill_item.data(Qt.UserRole)
+        dlg3 = PD(hill_data["type"], hill_data["params"], hill_data["name"],
+                   units=win.units, parent=win, entry_speed_ms=entry_speed)
+        assert hasattr(dlg3, "_g_target_spin"), "Hill Arc dialog should offer the G-force solver"
+
+        # Use a realistic entry speed for this check (not the track's very
+        # low default ~2 m/s, which solves to a radius below the field's
+        # minimum and would correctly pop a blocking QMessageBox warning
+        # in the real app - exactly right for an interactive user, but not
+        # something a headless test can click through).
+        test_speed = 20.0
+        dlg3.entry_speed_ms = test_speed
+        dlg3._g_target_spin.setValue(3.0)
+        dlg3._solve_for_radius({"radius_param": "radius", "mode": "hill"})
+        solved_radius = dlg3._fields["radius"][1].value()
+        assert solved_radius > 0, f"expected a positive solved radius, got {solved_radius}"
+
+        from nl2designer.physics import solve_radius_hill
+        expected_radius = solve_radius_hill(test_speed, 3.0, climbing=True)
+        assert abs(solved_radius - expected_radius) < 0.01, \
+            f"GUI-solved radius {solved_radius} didn't match direct physics call {expected_radius}"
+        print(f"Solve-for-G-force through the dialog OK (entry speed {test_speed:.2f} m/s -> "
+              f"radius {solved_radius:.2f} m for 3.0G climbing)")
+
+        # And confirm the out-of-range path itself behaves sanely at the
+        # physics level (the GUI warning dialog is exercised by hand, not
+        # headlessly, for the reason above).
+        tiny_speed = 2.0
+        tiny_radius = solve_radius_hill(tiny_speed, 3.0, climbing=True)
+        assert tiny_radius < 2.0, "expected a very small (out-of-typical-range) radius at low speed, confirming why the warning path exists"
+
         print("\nALL CHECKS PASSED")
     except Exception as exc:  # noqa: BLE001
         import traceback

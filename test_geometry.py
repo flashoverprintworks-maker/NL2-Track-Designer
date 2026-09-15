@@ -455,6 +455,54 @@ def test_camelback_and_treble_clef():
     check("treble_clef_turn stays orthonormal", len(validate_points(tc_pts)) == 0)
 
 
+def test_solve_radius_for_g_force():
+    from nl2designer.physics import (
+        compute_g_forces, solve_radius_hill, solve_radius_flat_turn, solve_radius_loop,
+    )
+
+    def g_at_mid(spec, v):
+        f = Frame.start(pos=(0, 0, 0))
+        pts = integrate_element(f, spec, 0, step_size=0.2)
+        g = compute_g_forces(pts, [v] * len(pts))
+        return g[len(g) // 2]
+
+    v = 22.0
+
+    R = solve_radius_hill(v, 3.0, climbing=True)
+    got = g_at_mid(el.hill(R, 25), v)
+    check("solve_radius_hill (climbing) round-trips to within 2%",
+          abs(got[0] - 3.0) / 3.0 < 0.02, f"target=3.0, got={got[0]:.3f}")
+
+    R2 = solve_radius_hill(v, -0.5, climbing=False)
+    got2 = g_at_mid(el.hill(R2, -25), v)
+    check("solve_radius_hill (diving/airtime) round-trips to within 10%",
+          abs(got2[0] - (-0.5)) < 0.05, f"target=-0.5, got={got2[0]:.3f}")
+
+    R3 = solve_radius_flat_turn(v, 1.8)
+    got3 = g_at_mid(el.flat_turn(R3, 60, "left"), v)
+    check("solve_radius_flat_turn round-trips exactly",
+          abs(got3[1] - 1.8) < 0.001, f"target=1.8, got={got3[1]:.4f}")
+
+    R4 = solve_radius_loop(v, 4.0)
+    f = Frame.start(pos=(0, 0, 0))
+    pts4 = integrate_element(f, el.loop(R4), 0, step_size=0.1)
+    g4 = compute_g_forces(pts4, [v] * len(pts4))
+    check("solve_radius_loop round-trips exactly",
+          abs(g4[2][0] - 4.0) < 0.001, f"target=4.0, got={g4[2][0]:.4f}")
+
+    # Invalid inputs should raise clear errors, not produce nonsense radii.
+    try:
+        solve_radius_hill(v, 0.5, climbing=True)  # climbing can't be below 1G
+        check("solve_radius_hill rejects an impossible climbing target", False)
+    except ValueError:
+        check("solve_radius_hill rejects an impossible climbing target", True)
+    try:
+        solve_radius_loop(v, 0.8)  # loop bottom G is always > 1
+        check("solve_radius_loop rejects an impossible target", False)
+    except ValueError:
+        check("solve_radius_loop rejects an impossible target", True)
+
+
 def main():
     test_straight_no_drift()
     test_banked_turn_stays_level()
@@ -471,6 +519,7 @@ def main():
     test_speed_and_g_force()
     test_clothoid_loop()
     test_camelback_and_treble_clef()
+    test_solve_radius_for_g_force()
 
     print()
     if FAILURES:

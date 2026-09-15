@@ -434,6 +434,20 @@ class MainWindow(QMainWindow):
         original_data = dict(item.data(Qt.UserRole))
         original_data["params"] = dict(original_data["params"])
 
+        # Estimated speed at the START of this element (end of the
+        # previous row, or the very beginning of the track for row 0) -
+        # enables "solve for radius from target G-force" in the dialog.
+        entry_speed_ms = None
+        row = self.track_list.row(item)
+        row_distances = getattr(self, "_last_row_distances", None)
+        rail_points = getattr(self, "_last_rail_points", None)
+        speeds = getattr(self, "_last_speeds", None)
+        if row_distances and rail_points and speeds and 0 <= row < len(row_distances):
+            start_dist = row_distances[row - 1] if row > 0 else 0.0
+            idx = self._closest_index(rail_points, start_dist)
+            if idx is not None:
+                entry_speed_ms = speeds[idx]
+
         def live_preview(new_params, new_name):
             # Fires on every field change while the dialog is open, so the
             # 3D/2D/G-force previews update live as you adjust values -
@@ -454,7 +468,7 @@ class MainWindow(QMainWindow):
 
         dlg = ParamDialog(
             original_data["type"], original_data["params"], original_data["name"],
-            units=self.units, parent=self, on_change=live_preview,
+            units=self.units, parent=self, on_change=live_preview, entry_speed_ms=entry_speed_ms,
         )
         if dlg.exec() == ParamDialog.Accepted:
             data = dict(original_data)
