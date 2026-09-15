@@ -416,14 +416,41 @@ class MainWindow(QMainWindow):
         self.track_list.append_element(type_key)
 
     def _edit_item(self, item: QListWidgetItem):
-        data = item.data(Qt.UserRole)
-        dlg = ParamDialog(data["type"], data["params"], data["name"], units=self.units, parent=self)
+        original_data = dict(item.data(Qt.UserRole))
+        original_data["params"] = dict(original_data["params"])
+
+        def live_preview(new_params, new_name):
+            # Fires on every field change while the dialog is open, so the
+            # 3D/2D/G-force previews update live as you adjust values -
+            # not just after clicking OK. Suppressed from undo history
+            # (see _restoring) since it's not a committed edit yet; the
+            # final accept/cancel below registers exactly one undo step
+            # for the whole edit, not one per keystroke.
+            live_data = dict(original_data)
+            live_data["params"] = new_params
+            live_data["name"] = new_name or original_data["name"]
+            item.setData(Qt.UserRole, live_data)
+            item.setText(live_data["name"])
+            self._restoring = True
+            try:
+                self._refresh()
+            finally:
+                self._restoring = False
+
+        dlg = ParamDialog(
+            original_data["type"], original_data["params"], original_data["name"],
+            units=self.units, parent=self, on_change=live_preview,
+        )
         if dlg.exec() == ParamDialog.Accepted:
+            data = dict(original_data)
             data["params"] = dlg.result_params()
             data["name"] = dlg.result_name() or ELEMENT_TYPES[data["type"]]["label"]
             item.setData(Qt.UserRole, data)
             item.setText(data["name"])
-            self._refresh()
+        else:
+            item.setData(Qt.UserRole, original_data)
+            item.setText(original_data["name"])
+        self._refresh()  # one real (undo-worthy) refresh, whichever way it went
 
     def _remove_selected(self):
         self.track_list.remove_selected()

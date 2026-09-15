@@ -19,10 +19,12 @@ class ParamDialog(QDialog):
     engine and the NL2 export need regardless of display preference.
     """
 
-    def __init__(self, type_key: str, params: dict, display_name: str, units: str = "m", parent=None):
+    def __init__(self, type_key: str, params: dict, display_name: str, units: str = "m", parent=None,
+                 on_change=None):
         super().__init__(parent)
         self.type_key = type_key
         self.units = units
+        self.on_change = on_change  # optional callback(params_dict, name) fired on every field edit
         spec = ELEMENT_TYPES[type_key]
         self.setWindowTitle(f"Edit {spec['label']}")
 
@@ -37,6 +39,7 @@ class ParamDialog(QDialog):
         form = QFormLayout()
 
         self.name_edit = QLineEdit(display_name)
+        self.name_edit.textChanged.connect(self._notify_change)
         form.addRow("Name", self.name_edit)
 
         for entry in spec["params"]:
@@ -61,6 +64,7 @@ class ParamDialog(QDialog):
                 w.setValue(disp_value)
                 if disp_unit:
                     w.setSuffix(f" {disp_unit}")
+                w.valueChanged.connect(self._notify_change)
                 form.addRow(key, w)
                 self._fields[key] = ("float", w)
                 if is_length:
@@ -71,6 +75,7 @@ class ParamDialog(QDialog):
                 w.addItems(options)
                 idx = w.findText(str(current))
                 w.setCurrentIndex(idx if idx >= 0 else 0)
+                w.currentIndexChanged.connect(self._notify_change)
                 form.addRow(key, w)
                 self._fields[key] = ("choice", w)
             else:
@@ -82,6 +87,10 @@ class ParamDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+
+    def _notify_change(self, *_args):
+        if self.on_change is not None:
+            self.on_change(self.result_params(), self.result_name())
 
     def result_params(self) -> dict:
         out = {}
