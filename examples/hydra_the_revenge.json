@@ -155,19 +155,11 @@
       }
     },
     {
-      "type": "hill",
-      "name": "Airtime hill (up)",
+      "type": "camelback",
+      "name": "Airtime hill",
       "params": {
         "radius": 35.0,
-        "angle_deg": 22.0
-      }
-    },
-    {
-      "type": "hill",
-      "name": "Airtime hill (down)",
-      "params": {
-        "radius": 35.0,
-        "angle_deg": -22.0
+        "crest_angle_deg": 22.0
       }
     },
     {

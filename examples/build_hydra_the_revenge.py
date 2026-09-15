@@ -65,8 +65,7 @@ ITEMS = [
     ("banked_turn", "Downward right turn", {
         "radius": 30.0, "angle_deg": 60.0, "bank_deg": 35.0, "direction": "right", "transition_frac": 0.25,
     }),
-    ("hill", "Airtime hill (up)", {"radius": 35.0, "angle_deg": 22.0}),
-    ("hill", "Airtime hill (down)", {"radius": 35.0, "angle_deg": -22.0}),
+    ("camelback", "Airtime hill", {"radius": 35.0, "crest_angle_deg": 22.0}),
     ("corkscrew", "Corkscrew 2", {"length": 25.0, "direction": "right"}),
     # Closing sequence: sweeps the layout back to the station. The real
     # ride's documented "360 degree left turn, banked 90 degree right

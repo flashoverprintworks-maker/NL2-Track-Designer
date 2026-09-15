@@ -1,0 +1,190 @@
+{
+  "track_name": "Test B&M Hyper (250ft)",
+  "items": [
+    {
+      "type": "straight",
+      "name": "Station exit",
+      "params": {
+        "length": 15.0
+      }
+    },
+    {
+      "type": "lift_standard_steel",
+      "name": "Lift Hill (250 ft)",
+      "params": {
+        "height": 76.2,
+        "angle_deg": 30.0,
+        "bottom_transition_radius": 14.0,
+        "top_transition_radius": 20.0
+      }
+    },
+    {
+      "type": "hill",
+      "name": "First Drop (dive in, 75 deg)",
+      "params": {
+        "radius": 50.0,
+        "angle_deg": -75.0
+      }
+    },
+    {
+      "type": "hill",
+      "name": "First Drop (pull out)",
+      "params": {
+        "radius": 60.0,
+        "angle_deg": 75.0
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 1",
+      "params": {
+        "radius": 60.0,
+        "crest_angle_deg": 30.0
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "High-speed turn (out leg)",
+      "params": {
+        "radius": 90.0,
+        "angle_deg": 35.0,
+        "bank_deg": 45.0,
+        "direction": "right",
+        "transition_frac": 0.25
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 2",
+      "params": {
+        "radius": 55.0,
+        "crest_angle_deg": 27.0
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 3",
+      "params": {
+        "radius": 50.0,
+        "crest_angle_deg": 25.0
+      }
+    },
+    {
+      "type": "treble_clef_turn",
+      "name": "Treble Clef Turn (far turnaround)",
+      "params": {
+        "radius": 75.0,
+        "total_turn_deg": 195.0,
+        "dive_deg": 20.0,
+        "bank_deg": 62.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 4",
+      "params": {
+        "radius": 45.0,
+        "crest_angle_deg": 22.0
+      }
+    },
+    {
+      "type": "overbanked_turn",
+      "name": "Overbanked Turn (return leg)",
+      "params": {
+        "radius": 50.0,
+        "angle_deg": 40.0,
+        "bank_deg": 100.0,
+        "direction": "left",
+        "transition_frac": 0.3
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 5",
+      "params": {
+        "radius": 40.0,
+        "crest_angle_deg": 20.0
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Mid-Course Brake Run",
+      "params": {
+        "length": 35.0
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 6",
+      "params": {
+        "radius": 35.0,
+        "crest_angle_deg": 18.0
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "Return-leg turn",
+      "params": {
+        "radius": 60.0,
+        "angle_deg": 30.0,
+        "bank_deg": 40.0,
+        "direction": "left",
+        "transition_frac": 0.25
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 7",
+      "params": {
+        "radius": 30.0,
+        "crest_angle_deg": 15.0
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "Final approach turn",
+      "params": {
+        "radius": 55.0,
+        "angle_deg": 51.2,
+        "bank_deg": 35.0,
+        "direction": "right",
+        "transition_frac": 0.3
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Return straight",
+      "params": {
+        "length": 263.0
+      }
+    },
+    {
+      "type": "camelback",
+      "name": "Airtime Hill 8 (final pop)",
+      "params": {
+        "radius": 22.0,
+        "crest_angle_deg": 12.0
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Final Brake Run",
+      "params": {
+        "length": 35.0
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Return to Station",
+      "params": {
+        "length": 15.0
+      }
+    }
+  ],
+  "heartline_offset": 1.1,
+  "arrow_style": false,
+  "roughness_deg": 0.0,
+  "start_speed_ms": 2.0,
+  "friction_coef": 0.02
+}

@@ -416,7 +416,44 @@ floor behavior is itself confirmation the readout is working - it's
 being honest about where the physics model's assumptions break down,
 rather than making up a number.
 
-## Known limitations / next steps (updated after milestone 14)
+## Treble Clef Turn, and a real hill-crest bug fix (milestone 15)
+
+**New element: Treble Clef Turn (B&M/Fury 325)** - the large, sweeping,
+non-inverting turnaround with a dive built into the middle, named for
+the element on Fury 325 (Carowinds) that dives below the park's main
+entrance mid-turn. Verified it turns the requested total angle, dips
+and genuinely recovers back to (within 5cm of) its starting height, and
+stays orthonormal throughout.
+
+**A real bug this surfaced, affecting every "airtime hill" built the
+documented way:** `hill(+A)` followed by `hill(-A)` was advertised (in
+this program's own docstrings) as building a classic up-and-over
+airtime hill. It doesn't - it climbs to angle A and then *levels off*,
+ending measurably higher than it started, never actually cresting and
+descending. The pitch simply approaches level and stops; it never
+crosses back through level to actually turn downward. This affected the
+bundled Hydra the Revenge example's airtime hills directly, and would
+have affected anyone following the (now-corrected) old advice.
+
+**Fixed properly, not patched over:** `camelback()` (previously just a
+thin, misleadingly-named wrapper around a single `hill()` call) is now
+a real 3-phase composite - rise to the peak angle, swing through twice
+that angle the other way (this is what makes pitch actually cross zero
+at the true crest, not just approach it), then settle back to level.
+Verified to return to within 1cm of its starting height and to
+genuinely peak in the interior of the element, not at the very end -
+both locked in as tests, alongside a test that reproduces the original
+broken behavior on purpose so the bug can never silently return. Now a
+proper palette entry ("Camelback Hill (airtime)"). The Hydra example's
+airtime hills were rebuilt with the fix; closure held (~32m gap in a
+1111m track, essentially unchanged from before).
+
+Building `treble_clef_turn()` is what surfaced this - its dip used the
+same flawed pattern at first, revealing the bug through a much more
+visible symptom (tens of meters of unwanted descent) before getting
+traced back to its root cause.
+
+## Known limitations / next steps (updated after milestone 15)
 
 **Fixed in milestone 3:**
 - ~~Banked turns drift in height~~ — fixed. Yaw is now a rigid rotation

@@ -66,10 +66,17 @@ def banked_turn(
 
 
 def hill(radius: float, angle_deg: float, name: str = None) -> ElementSpec:
-    """A vertical arc: positive angle_deg = crest (goes up then levels/over
-    the top), negative = valley (dips down then levels). This is a single
-    constant-radius arc; chain two of these (e.g. +20 then -20) to build a
-    classic hill shape, or use `camelback()` for a ready-made hill."""
+    """A single vertical arc: pitch changes monotonically by angle_deg and
+    stops - it does NOT crest and come back down on its own (a positive
+    angle here means "climb and level off at the top", not "go over a
+    hill"; the vertical component of travel never reverses direction
+    within a single hill() call). Useful on its own for things like
+    climbing into a drop, or pulling out of one. For an actual hill you
+    ride up and over - height increases then decreases - use
+    `camelback()`, which is built correctly for that (chaining hill(+A)
+    then hill(-A) does NOT produce a real crest, despite how it looks
+    on paper - it produces a climb that flattens out, still higher at
+    the end than the start; see camelback()'s docstring for why)."""
     length = radius * math.radians(abs(angle_deg))
     return ElementSpec(
         name=name or f"Hill Arc {angle_deg:.0f} deg",
@@ -78,11 +85,31 @@ def hill(radius: float, angle_deg: float, name: str = None) -> ElementSpec:
     )
 
 
-def camelback(radius_top: float, crest_angle_deg: float, name: str = "Camelback Hill") -> ElementSpec:
-    """Convenience wrapper: this is really just `hill()` with a friendlier
-    name for the common case of a single airtime hill crest. For a full
-    hill (up, over, down) chain hill(+angle) then hill(-angle)."""
-    return hill(radius_top, crest_angle_deg, name=name)
+def _vertical_bump(radius: float, peak_angle_deg: float, name_prefix: str, crest_label: str) -> list:
+    """Shared implementation behind camelback() (crest, peak_angle_deg >
+    0) and the dip inside treble_clef_turn() (valley, peak_angle_deg <
+    0). Three phases so pitch actually crosses back through level
+    mid-element instead of just approaching it and stopping: rise to
+    the peak angle, then swing through TWICE that angle in the opposite
+    direction (this is what makes it cross zero pitch at the true crest
+    or valley bottom, not just level off there), then settle the
+    remaining peak_angle_deg back to exactly 0. Returns to very close to
+    the starting height, genuinely peaking (or bottoming) in the middle
+    rather than just plateauing."""
+    rise = hill(radius, peak_angle_deg, name=f"{name_prefix} (rise)")
+    turn_over = hill(radius, -2 * peak_angle_deg, name=f"{name_prefix} ({crest_label})")
+    settle = hill(radius, peak_angle_deg, name=f"{name_prefix} (settle)")
+    return [rise, turn_over, settle]
+
+
+def camelback(radius: float, crest_angle_deg: float, name: str = "Camelback Hill") -> list:
+    """A proper airtime hill: climbs, genuinely crests (pitch crosses
+    back through level at the top, where the classic airtime moment
+    happens), descends, and settles back to level - unlike simply
+    chaining hill(+angle) then hill(-angle), which only climbs and
+    flattens out without ever coming back down. Returns a list of 3
+    ElementSpecs (see _vertical_bump)."""
+    return _vertical_bump(radius, crest_angle_deg, name, "crest")
 
 
 def loop(radius: float, name: str = "Vertical Loop") -> ElementSpec:
@@ -402,6 +429,28 @@ def stengel_dive(radius: float, hill_angle_deg: float = 35.0, turn_angle_deg: fl
         roll_profile=ease_in_hold_out(0.3, 0.3),
     )
     return [climb, crest, descend]
+
+
+def treble_clef_turn(radius: float, total_turn_deg: float = 200.0, dive_deg: float = 20.0,
+                      bank_deg: float = 60.0, direction: str = "left", name: str = None) -> list:
+    """B&M's large, sweeping, high-speed turnaround with a dive built into
+    the middle - named for the ride element on Fury 325 (Carowinds),
+    which dives below the park's main entrance mid-turn. Non-inverting -
+    it's a turn and a dip, not a roll.
+
+    Modeled as a genuine dip (down, through the bottom, back up to
+    level - via _vertical_bump, the same corrected math behind
+    camelback()) immediately followed by the turn itself (pure yaw +
+    bank, no further pitch). Keeping the dip and the turn as separate
+    phases means each inherits an already-verified guarantee (the dip
+    actually returns to level; the turn - via banked_turn() - stays
+    level with no pitch input) instead of re-deriving both at once and
+    risking the same pitch/yaw residual error _vertical_bump's design
+    specifically avoids."""
+    base = name or "Treble Clef Turn"
+    dip = _vertical_bump(radius, -dive_deg, base, "bottom")
+    sweep = banked_turn(radius, total_turn_deg, bank_deg, direction, name=f"{base} (sweep)")
+    return dip + [sweep]
 
 
 def lift_hill(

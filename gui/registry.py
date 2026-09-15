@@ -51,6 +51,14 @@ ELEMENT_TYPES = {
             ("angle_deg", "float", 25.0, -180.0, 180.0, 1.0, "deg"),
         ],
     },
+    "camelback": {
+        "label": "Camelback Hill (airtime)",
+        "build": el.camelback,
+        "params": [
+            ("radius", "float", 40.0, 3.0, 1000.0, 0.5, "m"),
+            ("crest_angle_deg", "float", 25.0, 3.0, 89.0, 1.0, "deg"),
+        ],
+    },
     "loop": {
         "label": "Vertical Loop",
         "build": el.loop,
@@ -192,6 +200,17 @@ ELEMENT_TYPES = {
             ("hill_angle_deg", "float", 35.0, 5.0, 80.0, 1.0, "deg"),
             ("turn_angle_deg", "float", 60.0, -180.0, 180.0, 1.0, "deg"),
             ("bank_deg", "float", 110.0, 91.0, 150.0, 1.0, "deg"),
+            ("direction", "choice", "left", ["left", "right"]),
+        ],
+    },
+    "treble_clef_turn": {
+        "label": "Treble Clef Turn (B&M/Fury 325)",
+        "build": el.treble_clef_turn,
+        "params": [
+            ("radius", "float", 70.0, 15.0, 300.0, 1.0, "m"),
+            ("total_turn_deg", "float", 200.0, 90.0, 270.0, 5.0, "deg"),
+            ("dive_deg", "float", 20.0, 5.0, 40.0, 1.0, "deg"),
+            ("bank_deg", "float", 60.0, 20.0, 85.0, 1.0, "deg"),
             ("direction", "choice", "left", ["left", "right"]),
         ],
     },

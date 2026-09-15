@@ -412,6 +412,49 @@ def test_clothoid_loop():
           f"circular={bottom_g_circular:.2f}, clothoid={bottom_g_clothoid:.2f}")
 
 
+def test_camelback_and_treble_clef():
+    def build(specs, start=(0, 0, 0)):
+        f = Frame.start(pos=start)
+        pts, dist = [], 0.0
+        for i, spec in enumerate(specs):
+            seg = integrate_element(f, spec, dist, step_size=0.2)
+            pts.extend(seg if i == 0 else seg[1:])
+            last = seg[-1]
+            f = Frame(pos=last.pos, front=last.front, left=last.left, up=last.up)
+            dist = last.distance
+        return pts
+
+    # The bug this locks in: hill(+A) then hill(-A) only climbs and
+    # flattens out - it never comes back down. camelback() must actually
+    # crest and descend.
+    naive_pts = build([el.hill(40, 25), el.hill(40, -25)])
+    check("the naive hill(+A)+hill(-A) pattern (documented as WRONG) "
+          "really does end up higher, not back at start - confirms the bug is real",
+          naive_pts[-1].pos[1] > 3.0, f"end height={naive_pts[-1].pos[1]:.2f}")
+
+    cb_pts = build(el.camelback(radius=40, crest_angle_deg=25))
+    ys = [p.pos[1] for p in cb_pts]
+    check("camelback returns to (very nearly) its starting height",
+          abs(ys[-1] - ys[0]) < 0.01, f"start={ys[0]:.3f}, end={ys[-1]:.3f}")
+    peak_i = ys.index(max(ys))
+    check("camelback genuinely crests in the interior, not at the very end",
+          peak_i < len(ys) - 10, f"peak at {peak_i}/{len(ys)}")
+    check("camelback stays orthonormal", len(validate_points(cb_pts)) == 0)
+
+    tc_pts = build(el.treble_clef_turn(radius=70, total_turn_deg=200, dive_deg=20, bank_deg=60))
+    tys = [p.pos[1] for p in tc_pts]
+    check("treble_clef_turn returns to (very nearly) its starting height",
+          abs(tys[-1] - tys[0]) < 0.05, f"start={tys[0]:.3f}, end={tys[-1]:.3f}")
+    check("treble_clef_turn genuinely dips (not just flat)", min(tys) < -3.0, f"min={min(tys):.2f}")
+    heading_start = math.degrees(math.atan2(tc_pts[0].front[0], tc_pts[0].front[2]))
+    heading_end = math.degrees(math.atan2(tc_pts[-1].front[0], tc_pts[-1].front[2]))
+    turned = ((heading_end - heading_start + 540) % 360) - 180
+    check("treble_clef_turn turns the requested total angle",
+          abs(abs(turned) - 160.0) < 1.0 or abs(abs(turned) - 200.0) < 1.0,
+          f"turned {turned:.1f} deg (200 deg wraps to -160, both are the same physical turn)")
+    check("treble_clef_turn stays orthonormal", len(validate_points(tc_pts)) == 0)
+
+
 def main():
     test_straight_no_drift()
     test_banked_turn_stays_level()
@@ -427,6 +470,7 @@ def main():
     test_closure_offset()
     test_speed_and_g_force()
     test_clothoid_loop()
+    test_camelback_and_treble_clef()
 
     print()
     if FAILURES:
