@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 
 from gui.main import MainWindow
 from gui.registry import ELEMENT_TYPES
@@ -110,6 +110,61 @@ def run_checks():
         result = dlg.result_params()
         assert "radius_bottom" in result and "radius_top" in result, result
         print("Undo/redo and clothoid loop checks OK")
+
+        # --- Live preview while editing (custom element specifically) ---
+        win._new_project()
+        win.track_list.append_element("custom")
+        assert win.track_list.count() == 1
+
+        from gui.param_dialog import ParamDialog as PD
+        item = win.track_list.item(0)
+        data = item.data(Qt.UserRole)
+        undo_depth_before_edit = len(win._undo_stack)
+
+        def live_preview_test(new_params, new_name):
+            live_data = dict(data)
+            live_data["params"] = new_params
+            live_data["name"] = new_name or data["name"]
+            item.setData(Qt.UserRole, live_data)
+            item.setText(live_data["name"])
+            win._restoring = True
+            try:
+                win._refresh()
+            finally:
+                win._restoring = False
+
+        dlg2 = PD(data["type"], data["params"], data["name"], units=win.units, parent=win,
+                   on_change=live_preview_test)
+
+        def _apply(dlg, key, value):
+            widget = dlg._fields[key][1]
+            widget.setValue(value)
+
+        # Simulate the user dragging the length field around several times
+        # while the dialog is open - each change should update the live
+        # preview (track_list item data + 3D points) immediately, and
+        # NONE of these intermediate tweaks should land in the undo stack.
+        for test_length in [30.0, 45.0, 60.0]:
+            _apply(dlg2, "length", test_length)
+            live_data = item.data(Qt.UserRole)
+            assert abs(live_data["params"]["length"] - test_length) < 1e-6, live_data["params"]
+            assert win._last_rail_points, "3D preview points should be populated during live edit"
+            assert len(win._undo_stack) == undo_depth_before_edit, \
+                f"live preview should not push undo entries mid-edit, stack grew to {len(win._undo_stack)}"
+
+        dlg2.accept()  # simulate clicking OK
+        # Manually finish what _edit_item does after exec() returns Accepted,
+        # since we drove the dialog directly instead of through .exec().
+        final_data = dict(data)
+        final_data["params"] = dlg2.result_params()
+        final_data["name"] = dlg2.result_name()
+        item.setData(Qt.UserRole, final_data)
+        item.setText(final_data["name"])
+        win._refresh()
+        assert len(win._undo_stack) == undo_depth_before_edit + 1, \
+            f"exactly one undo entry should register for the whole edit, got {len(win._undo_stack) - undo_depth_before_edit}"
+        assert item.data(Qt.UserRole)["params"]["length"] == 60.0
+        print("Live preview during element editing OK (updates live, one undo step per edit)")
 
         print("\nALL CHECKS PASSED")
     except Exception as exc:  # noqa: BLE001

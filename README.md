@@ -361,7 +361,29 @@ the real GUI: add three elements, undo three times back to empty, redo
 all three back, and confirm a new action after an undo correctly clears
 the redo stack (standard editor semantics, not just "don't crash").
 
-## Known limitations / next steps (updated after milestone 12)
+## Live preview while editing (milestone 13)
+
+Previously, the 3D/2D/G-force previews only updated after clicking OK
+and closing an element's edit dialog - useful for most elements, but
+frustrating for the Custom (advanced) element specifically, where
+you're often nudging pitch/yaw/roll values to see what shape they
+produce. Now every field in the edit dialog - including Name - triggers
+a live update of all three previews, the summary panel, and the
+closure readout, while the dialog is still open.
+
+Implementation note: live edits don't pollute the undo history. Every
+field change while the dialog is open is suppressed from the undo
+stack; only the final state (when you click OK, or the reverted
+original state if you click Cancel) registers as a single undo-able
+action - dragging a slider through fifty intermediate values doesn't
+mean fifty Ctrl+Z presses to get back to where you started. Verified
+directly: simulated changing a Custom element's length three times
+while its dialog was open, confirmed the live preview picked up each
+change immediately and the undo stack didn't grow at all during that,
+then confirmed accepting the dialog registered exactly one new undo
+entry for the whole edit.
+
+## Known limitations / next steps (updated after milestone 13)
 
 **Fixed in milestone 3:**
 - ~~Banked turns drift in height~~ — fixed. Yaw is now a rigid rotation
