@@ -383,7 +383,40 @@ change immediately and the undo stack didn't grow at all during that,
 then confirmed accepting the dialog registered exactly one new undo
 entry for the whole edit.
 
-## Known limitations / next steps (updated after milestone 13)
+## Speed readout while building (milestone 14)
+
+A real gap: the speed/G-force estimate was being computed correctly the
+whole time (verified extensively against textbook physics in milestone
+11), but nothing in the UI actually showed it per-element as you built
+- only one "top speed for the whole ride" number in the summary, and a
+chart that plotted G-forces but not speed itself. Two fixes:
+
+- **Speed line on the Speed/G-Forces chart** - a third line (green),
+  on its own right-hand axis in km/h or mph (matching the units
+  toggle), since G-force and speed use genuinely different scales and
+  cramming them onto one axis would make both hard to read.
+- **New "Estimated speed / G-force" panel**, right under the existing
+  closure readout - shows speed, vertical G, and lateral G for the end
+  of the track and for whichever element is currently selected in the
+  track list, using the exact same "click through elements to see
+  values evolve" pattern as the closure feature.
+
+Demonstrated end-to-end on the scenario that prompted this: straight
+into a steep drop showed speed climbing from ~4 km/h at the crest to
+~64 km/h at the bottom, exactly tracking the elevation change, both in
+the chart and in the per-element readout.
+
+One thing worth being direct about: if a layout includes a real chain
+lift with a low station start speed, the selected-element readout will
+correctly show the speed pinned at the model's floor value throughout
+the lift and beyond - not a bug, the same documented limitation from
+milestone 11 (this model has no concept of a powered lift; energy
+conservation alone can't climb one from a slow starting speed). That
+floor behavior is itself confirmation the readout is working - it's
+being honest about where the physics model's assumptions break down,
+rather than making up a number.
+
+## Known limitations / next steps (updated after milestone 14)
 
 **Fixed in milestone 3:**
 - ~~Banked turns drift in height~~ — fixed. Yaw is now a rigid rotation

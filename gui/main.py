@@ -227,6 +227,7 @@ class MainWindow(QMainWindow):
         self.track_list.changed.connect(self._refresh)
         self.track_list.itemDoubleClicked.connect(self._edit_item)
         self.track_list.currentRowChanged.connect(self._update_closure_labels)
+        self.track_list.currentRowChanged.connect(self._update_speed_labels)
         track_layout.addWidget(self.track_list)
 
         closure_box = QWidget()
@@ -242,6 +243,20 @@ class MainWindow(QMainWindow):
             lbl.setWordWrap(True)
             closure_layout.addWidget(lbl)
         track_layout.addWidget(closure_box)
+
+        speed_box = QWidget()
+        speed_layout = QVBoxLayout(speed_box)
+        speed_layout.setContentsMargins(0, 4, 0, 4)
+        speed_layout.setSpacing(2)
+        speed_title = QLabel("<b>Estimated speed / G-force</b> (energy conservation - see Speed / G-Forces tab)")
+        speed_layout.addWidget(speed_title)
+        self.speed_end_label = QLabel("End of track: -")
+        self.speed_selected_label = QLabel("Selected element: -")
+        for lbl in (self.speed_end_label, self.speed_selected_label):
+            lbl.setStyleSheet("font-family: monospace;")
+            lbl.setWordWrap(True)
+            speed_layout.addWidget(lbl)
+        track_layout.addWidget(speed_box)
 
         btn_row = QHBoxLayout()
         remove_btn = QPushButton("Remove selected")
@@ -529,6 +544,45 @@ class MainWindow(QMainWindow):
         offset = {"dx": dx, "dy": dy, "dz": dz, "distance": math.sqrt(dx * dx + dy * dy + dz * dz)}
         self.closure_selected_label.setText("Selected element:  " + self._format_closure(offset))
 
+    def _closest_index(self, points, target_distance):
+        if not points:
+            return None
+        best_i, best_diff = 0, float("inf")
+        for i, p in enumerate(points):
+            diff = abs(p.distance - target_distance)
+            if diff < best_diff:
+                best_i, best_diff = i, diff
+        return best_i
+
+    def _format_speed_g(self, idx: int) -> str:
+        speeds = self._last_speeds
+        gforces = self._last_gforces
+        v_ms = speeds[idx]
+        v_disp = ms_to_mph(v_ms) if self.units == "ft" else ms_to_kmh(v_ms)
+        speed_unit = "mph" if self.units == "ft" else "km/h"
+        vg, lg = gforces[idx]
+        return f"speed={v_disp:5.1f} {speed_unit}   vertical G={vg:+.1f}   lateral G={lg:+.1f}"
+
+    def _update_speed_labels(self, *_args):
+        rail_points = getattr(self, "_last_rail_points", None)
+        speeds = getattr(self, "_last_speeds", None)
+        row_distances = getattr(self, "_last_row_distances", None)
+        if not rail_points or not speeds:
+            self.speed_end_label.setText("End of track: -")
+            self.speed_selected_label.setText("Selected element: -")
+            return
+
+        end_idx = len(rail_points) - 1
+        self.speed_end_label.setText("End of track:      " + self._format_speed_g(end_idx))
+
+        row = self.track_list.currentRow()
+        if row is None or row < 0 or not row_distances or row >= len(row_distances):
+            self.speed_selected_label.setText("Selected element:  (select an item in the track list)")
+            return
+        target_dist = row_distances[row]
+        idx = self._closest_index(rail_points, target_dist)
+        self.speed_selected_label.setText("Selected element:  " + self._format_speed_g(idx))
+
     # --- Undo/redo -----------------------------------------------------
     def _capture_state(self) -> dict:
         return {
@@ -603,7 +657,10 @@ class MainWindow(QMainWindow):
             self._last_track = None
             self._last_rail_points = None
             self._last_row_distances = None
+            self._last_speeds = None
+            self._last_gforces = None
             self._update_closure_labels()
+            self._update_speed_labels()
             return
 
         self.preview.set_points(rail_points, heartline_points)
@@ -617,11 +674,17 @@ class MainWindow(QMainWindow):
         if not rail_points:
             self.summary_text.setPlainText("Add elements to the track list to see a summary here.")
             self.gforce_chart.set_data([], [], [])
+            self._last_speeds = None
+            self._last_gforces = None
+            self._update_speed_labels()
             return
 
         speeds = track.speed_profile(rail_points)
         gforces = track.g_forces(rail_points, speeds)
-        self.gforce_chart.set_data(rail_points, gforces, speeds)
+        self._last_speeds = speeds
+        self._last_gforces = gforces
+        self.gforce_chart.set_data(rail_points, gforces, speeds, self.units)
+        self._update_speed_labels()
         physics_warnings = track.physics_warnings(rail_points)
 
         lines = [track.summary(), ""]

@@ -3,25 +3,32 @@ from PySide6.QtGui import QPainter, QPen, QColor, QFont, QPolygonF
 from PySide6.QtCore import Qt, QRectF, QPointF
 
 from nl2designer.physics import LIMIT_VERTICAL_G_MAX, LIMIT_VERTICAL_G_MIN, LIMIT_LATERAL_G
+from gui.units import ms_to_kmh, ms_to_mph
 
 
 class GForceChart(QWidget):
-    """Vertical G and lateral G plotted against distance along the track,
-    with dashed reference lines at the ASTM F2291-referenced brief-peak
-    comfort limits (see physics.py). Native QPainter, no chart library
-    dependency, consistent with the other preview widgets."""
+    """Vertical G, lateral G, and speed plotted against distance along
+    the track. G-forces use the left axis; speed uses its own axis on
+    the right (different units, different scale) so you can directly
+    read "how fast am I going here" instead of inferring it from the
+    G-force shape. Dashed lines mark the ASTM F2291-referenced
+    brief-peak comfort limits (see physics.py). Native QPainter, no
+    chart library dependency, consistent with the other preview
+    widgets."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.points = []
         self.g_forces = []  # list of (vertical_g, lateral_g)
         self.speeds = []  # m/s, parallel to points
+        self.units = "m"  # "m" -> speed axis in km/h, "ft" -> mph
         self.setMinimumHeight(220)
 
-    def set_data(self, points, g_forces, speeds):
+    def set_data(self, points, g_forces, speeds, units="m"):
         self.points = points
         self.g_forces = g_forces
         self.speeds = speeds
+        self.units = units
         self.update()
 
     def paintEvent(self, event):
@@ -34,7 +41,7 @@ class GForceChart(QWidget):
             painter.drawText(self.rect(), Qt.AlignCenter, "Add elements to see estimated speed and G-forces")
             return
 
-        margin_left, margin_right, margin_top, margin_bottom = 46, 14, 24, 28
+        margin_left, margin_right, margin_top, margin_bottom = 46, 52, 24, 28
         rect = QRectF(margin_left, margin_top,
                        self.width() - margin_left - margin_right,
                        self.height() - margin_top - margin_bottom)
@@ -42,14 +49,23 @@ class GForceChart(QWidget):
         distances = [p.distance for p in self.points]
         vgs = [g[0] for g in self.g_forces]
         lgs = [g[1] for g in self.g_forces]
+        speed_conv = ms_to_mph if self.units == "ft" else ms_to_kmh
+        speed_unit = "mph" if self.units == "ft" else "km/h"
+        speeds_disp = [speed_conv(v) for v in self.speeds]
 
         g_min = min(vgs + lgs + [LIMIT_VERTICAL_G_MIN, -LIMIT_LATERAL_G]) - 0.5
         g_max = max(vgs + lgs + [LIMIT_VERTICAL_G_MAX, LIMIT_LATERAL_G]) + 0.5
         d_min, d_max = distances[0], max(distances[-1], distances[0] + 1e-6)
+        s_min, s_max = 0.0, max(speeds_disp) * 1.15 if speeds_disp else 1.0
 
         def tf(d, g):
             x = rect.left() + (d - d_min) / (d_max - d_min) * rect.width()
             y = rect.bottom() - (g - g_min) / (g_max - g_min) * rect.height()
+            return x, y
+
+        def tf_speed(d, s):
+            x = rect.left() + (d - d_min) / (d_max - d_min) * rect.width()
+            y = rect.bottom() - (s - s_min) / (s_max - s_min) * rect.height()
             return x, y
 
         # Zero-G and reference limit lines.
@@ -72,9 +88,9 @@ class GForceChart(QWidget):
             if label:
                 painter.setPen(QColor(*color))
                 painter.setFont(QFont("Sans", 8))
-                painter.drawText(QPointF(rect.right() - 110, y - 3), label)
+                painter.drawText(QPointF(rect.right() - 150, y - 3), label)
 
-        # Y axis labels.
+        # Left Y axis labels (G).
         painter.setPen(QColor(150, 150, 150))
         painter.setFont(QFont("Sans", 8))
         for g_tick in range(int(g_min) - 1, int(g_max) + 2):
@@ -82,6 +98,22 @@ class GForceChart(QWidget):
                 continue
             _, y = tf(d_min, g_tick)
             painter.drawText(QPointF(4, y + 4), f"{g_tick:+d}G")
+
+        # Right Y axis labels (speed).
+        n_ticks = 5
+        for i in range(n_ticks + 1):
+            s_tick = s_min + (s_max - s_min) * i / n_ticks
+            _, y = tf_speed(d_min, s_tick)
+            painter.drawText(QPointF(rect.right() + 6, y + 4), f"{s_tick:.0f}")
+
+        # Speed line (green, own axis) drawn first/behind, then G-force
+        # lines on top so the comfort limits stay easy to read.
+        pen = QPen(QColor(110, 220, 140))
+        pen.setWidthF(1.6)
+        pen.setStyle(Qt.SolidLine)
+        painter.setPen(pen)
+        poly_speed = QPolygonF([QPointF(*tf_speed(d, s)) for d, s in zip(distances, speeds_disp)])
+        painter.drawPolyline(poly_speed)
 
         # Vertical G line (blue) and lateral G line (orange).
         for series, color, name in [(vgs, (90, 170, 250), "Vertical G"), (lgs, (250, 170, 90), "Lateral G")]:
@@ -96,6 +128,8 @@ class GForceChart(QWidget):
         painter.drawText(QPointF(margin_left, 16), "Vertical G")
         painter.setPen(QColor(250, 170, 90))
         painter.drawText(QPointF(margin_left + 80, 16), "Lateral G")
+        painter.setPen(QColor(110, 220, 140))
+        painter.drawText(QPointF(margin_left + 160, 16), f"Speed ({speed_unit})")
 
         painter.setPen(QColor(150, 150, 150))
         painter.drawText(QPointF(rect.left(), self.height() - 8), "distance along track \u2192")
