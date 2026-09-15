@@ -1,0 +1,221 @@
+{
+  "track_name": "Hydra the Revenge (recreation)",
+  "items": [
+    {
+      "type": "corkscrew",
+      "name": "JoJo Roll (pre-lift heartline roll)",
+      "params": {
+        "length": 18.0,
+        "direction": "left"
+      }
+    },
+    {
+      "type": "flat_turn",
+      "name": "Turn to lift",
+      "params": {
+        "radius": 20.0,
+        "angle_deg": 100.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "lift_standard_steel",
+      "name": "Lift Hill (95 ft)",
+      "params": {
+        "height": 29.0,
+        "angle_deg": 30.0,
+        "bottom_transition_radius": 12.0,
+        "top_transition_radius": 16.0
+      }
+    },
+    {
+      "type": "hill",
+      "name": "First Drop (dive in, 68 deg)",
+      "params": {
+        "radius": 42.0,
+        "angle_deg": -68.0
+      }
+    },
+    {
+      "type": "flat_turn",
+      "name": "First Drop (curve right)",
+      "params": {
+        "radius": 35.0,
+        "angle_deg": 20.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "hill",
+      "name": "First Drop (pull out)",
+      "params": {
+        "radius": 55.0,
+        "angle_deg": 68.0
+      }
+    },
+    {
+      "type": "flat_turn",
+      "name": "Canyon race turn 1",
+      "params": {
+        "radius": 30.0,
+        "angle_deg": 35.0,
+        "direction": "left"
+      }
+    },
+    {
+      "type": "flat_turn",
+      "name": "Canyon race turn 2",
+      "params": {
+        "radius": 30.0,
+        "angle_deg": 35.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "dive_loop",
+      "name": "Inclined Dive Loop",
+      "params": {
+        "radius": 20.0,
+        "direction": "left"
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Connector",
+      "params": {
+        "length": 10.0
+      }
+    },
+    {
+      "type": "zero_g_roll",
+      "name": "Zero-G Roll",
+      "params": {
+        "radius": 30.0,
+        "angle_deg": 60.0,
+        "num_rolls": 1.0
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Connector",
+      "params": {
+        "length": 10.0
+      }
+    },
+    {
+      "type": "corkscrew",
+      "name": "Corkscrew 1",
+      "params": {
+        "length": 25.0,
+        "direction": "left"
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Connector",
+      "params": {
+        "length": 15.0
+      }
+    },
+    {
+      "type": "cobra_roll",
+      "name": "Cobra Roll (signature element)",
+      "params": {
+        "radius": 18.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Connector",
+      "params": {
+        "length": 10.0
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "Upward left turn",
+      "params": {
+        "radius": 30.0,
+        "angle_deg": 60.0,
+        "bank_deg": 35.0,
+        "direction": "left",
+        "transition_frac": 0.25
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "Downward right turn",
+      "params": {
+        "radius": 30.0,
+        "angle_deg": 60.0,
+        "bank_deg": 35.0,
+        "direction": "right",
+        "transition_frac": 0.25
+      }
+    },
+    {
+      "type": "hill",
+      "name": "Airtime hill (up)",
+      "params": {
+        "radius": 35.0,
+        "angle_deg": 22.0
+      }
+    },
+    {
+      "type": "hill",
+      "name": "Airtime hill (down)",
+      "params": {
+        "radius": 35.0,
+        "angle_deg": -22.0
+      }
+    },
+    {
+      "type": "corkscrew",
+      "name": "Corkscrew 2",
+      "params": {
+        "length": 25.0,
+        "direction": "right"
+      }
+    },
+    {
+      "type": "flat_turn",
+      "name": "Return sweep (left)",
+      "params": {
+        "radius": 50.0,
+        "angle_deg": -180.0,
+        "direction": "left"
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Return straight",
+      "params": {
+        "length": 196.7
+      }
+    },
+    {
+      "type": "banked_turn",
+      "name": "Final approach turn",
+      "params": {
+        "radius": 25.0,
+        "angle_deg": 55.0,
+        "bank_deg": 20.0,
+        "direction": "right",
+        "transition_frac": 0.25
+      }
+    },
+    {
+      "type": "straight",
+      "name": "Brake run",
+      "params": {
+        "length": 20.0
+      }
+    }
+  ],
+  "heartline_offset": 1.1,
+  "arrow_style": false,
+  "roughness_deg": 0.0,
+  "start_speed_ms": 2.0,
+  "friction_coef": 0.02
+}
